@@ -7,7 +7,6 @@ RUN apk update
 RUN apk add git
 RUN git clone https://github.com/sgadrat/super-tilt-bro.git
 WORKDIR /root/super-tilt-bro
-RUN git checkout 2.5
 
 # Build Super Tilt Bro.
 RUN apk add bash curl build-base
@@ -16,11 +15,7 @@ ENV XA_BIN=/root/super-tilt-bro/deps/xa65-stb/xa/xa
 ENV CC_BIN=/root/super-tilt-bro/deps/gcc-6502-bits/prefix/bin/6502-gcc
 ENV HUFFMUNCH_BIN=/root/super-tilt-bro/deps/huffmunch/huffmunch
 ENV SKIP_RESCUE_IMG=2
-RUN ls /root/super-tilt-bro/deps/gcc-6502-bits
-RUN ls /root/super-tilt-bro/deps/gcc-6502-bits/prefix
-RUN ls /root/super-tilt-bro/deps/gcc-6502-bits/prefix/bin
-RUN ls /root/super-tilt-bro/deps/gcc-6502-bits/prefix/bin/6502-gcc
-RUN ldd /root/super-tilt-bro/deps/gcc-6502-bits/prefix/bin/6502-gcc
+ENV LD_PRELOAD=/lib/libgcompat.so.0
 RUN ./build.sh
 
 # Install Webservice
