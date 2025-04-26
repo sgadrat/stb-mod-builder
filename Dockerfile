@@ -18,6 +18,11 @@ ENV SKIP_RESCUE_IMG=2
 ENV LD_PRELOAD=/lib/libgcompat.so.0
 RUN ./build.sh
 
+# Extract original mod as a single json file
+COPY stb-tools/ /root/stb-tools/
+RUN PYTHONPATH=$PYTHONPATH:/root/super-tilt-bro/tools /root/stb-tools/json_to_dict.py /root/super-tilt-bro/game-mod/mod.json > /root/original-mod.json
+RUN rm -rf /root/stb-tools/
+
 # Install Webservice
 RUN apk add python3 py3-pip py3-flask
 COPY hello.py /root/

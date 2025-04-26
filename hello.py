@@ -9,6 +9,7 @@ app = flask.Flask(__name__)
 logging.basicConfig(level=logging.INFO)
 
 stb_path = pathlib.Path("/root/super-tilt-bro")
+original_mod_path = pathlib.Path("/root/original-mod.json")
 mod_path = stb_path / "game-mod" / "mod.json"
 build_bin_path = stb_path / "build.sh"
 build_log_path = stb_path / "build.log"
@@ -18,10 +19,29 @@ running = False
 
 @app.route("/build/char", methods=['POST'])
 def hello():
-    return flask.request.json
+	new_character = flask.request.json
+
+	with open(original_mod_path, "r") as original_mod_file:
+		mod = json.load(original_mod_file)
+
+	replace_existing_character_id = None
+	for character_id in range(len(mod["characters"])):
+		if mod["characters"][character_id]["name"] == new_character.get("name"):
+			replace_existing_character_id = character_id
+			break
+
+	if replace_existing_character_id:
+		mod["characters"][replace_existing_character_id] = new_character
+	else:
+		mod["characters"].append(new_character)
+
+	return build_roms(mod)
 
 @app.route("/build/mod", methods=['POST'])
 def hello2():
+	return build_roms(flask.request.json)
+
+def build_roms(mod):
 	global running
 
 	if running:
@@ -30,8 +50,11 @@ def hello2():
 	try:
 		running = True
 
+		build_log_path.unlink(missing_ok=True)
+		rom_unrom_path.unlink(missing_ok=True)
+
 		with open(mod_path, "w") as mod_file:
-			json.dump(flask.request.json, mod_file)
+			json.dump(mod, mod_file)
 		result = subprocess.run(
 			[str(build_bin_path)],
 			text=True,
