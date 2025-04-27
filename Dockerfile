@@ -25,9 +25,9 @@ RUN rm -rf /root/stb-tools/
 
 # Install Webservice
 RUN apk add python3 py3-pip py3-flask
-COPY hello.py /root/
+COPY stb-mod-builder-service.py /root/
 
 WORKDIR /root
-ENV FLASK_APP=hello
+ENV FLASK_APP=stb-mod-builder-service
 EXPOSE 8000
 CMD ["flask", "run", "--host", "0.0.0.0", "--port", "8000"]

@@ -1,25 +1,34 @@
 STB mod builder
 ===============
 
-WIP project.
+Docker image that runs a webservice able to build a Super Tilt Bro. mod into a downloadable ROM.
 
-Goal: generate a Docker image that runs a webservice able to build a Super Tilt Bro. mod into a downloadable ROM.
-
-Notes
-=====
+Build and start service
+=======================
 
 ::
 
-	# Build and start service
-	#   use "docker build --no-cache" to get the latest git revision of STB
 	docker build -t stb-mod-builder:latest .
 	docker run -p 127.0.0.1:8000:8000 stb-mod-builder:latest
 
-	# Build a full game mod
-	./json_to_dict.py ~/workspace/nes/tilt/game-mod/mod.json > /tmp/stb25mod.json
-	curl -XPOST -vv http://127.0.0.1:8000/build/mod -d @/tmp/stb25mod.json -H 'Content-Type: application/json' > /tmp/out.json
-	cat /tmp/out.json | jq -r .roms.unrom | base64 -d > /tmp/tilt_unrom\(E\).nes
+To rebuild with the latest version of Super Tilt Bro, use the ``--no-cache`` flag of ``docker build``.
 
-	# Build only a character
-	~/workspace/nes/tools/json_to_dict.py --base-path ~/workspace/nes/tilt/game-mod ~/workspace/nes/tilt/game-mod/characters/sunny/sunny.json > /tmp/mysunny.json
-	curl -XPOST -vv http://127.0.0.1:8000/build/char -d @/tmp/mysunny.json -H 'Content-Type: application/json' > /tmp/out.json
+Build the game
+==============
+
+Once the service is running, you can use it to build the game from an entire mod, or just a character. Both of which must be in a single JSON file.
+
+Build a full mode by sending it to the ``/build/mod`` endpoint as POST data::
+
+	curl -XPOST -vv http://127.0.0.1:8000/build/mod -d @/path/to/my_mod.json -H 'Content-Type: application/json' > /tmp/out.json
+
+Build a single character by sending it to the ``/build/char`` endpoint as POST data::
+
+	curl -XPOST -vv http://127.0.0.1:8000/build/char -d @/path/my_character.json -H 'Content-Type: application/json' > /tmp/out.json
+
+You can reduce a mod or a character to a single JSON file with the script ``json_to_dict.py``, it depends on the ``stblib`` which is available in Super Tilt Bro.'s sources::
+
+	stb_src=/path/to/stp/repository
+
+	PYTHONPATH=/$stb_src/tools scripts/json_to_dict.py /$stb_src/game-mod/mod.json > /path/to/my_mod.json
+	PYTHONPATH=/$stb_src/tools scripts/json_to_dict.py --base-path /$stb_src/game-mod /$stb_src/game-mod/characters/kiki/kiki.json > /path/to/my_mod.json
