@@ -4,6 +4,7 @@ import json
 import logging
 import pathlib
 import subprocess
+import threading
 app = flask.Flask(__name__)
 
 logging.basicConfig(level=logging.INFO)
@@ -15,10 +16,11 @@ build_bin_path = stb_path / "build.sh"
 build_log_path = stb_path / "build.log"
 rom_unrom_path = stb_path / "tilt_no_network_unrom_(E).nes"
 
+processing_lock = threading.Lock()
 running = False
 
 @app.route("/build/char", methods=['POST'])
-def hello():
+def api_build_char():
 	new_character = flask.request.json
 
 	with open(original_mod_path, "r") as original_mod_file:
@@ -38,18 +40,18 @@ def hello():
 	return build_roms(mod)
 
 @app.route("/build/mod", methods=['POST'])
-def hello2():
+def api_build_mod():
 	return build_roms(flask.request.json)
 
 def build_roms(mod):
-	global running
+	global processing_lock, running
 
-	if running:
-		return {"returncode": None, "output": "busy right now"}, 400
-
-	try:
+	with processing_lock:
+		if running:
+			return {"returncode": None, "output": "busy right now"}, 400
 		running = True
 
+	try:
 		build_log_path.unlink(missing_ok=True)
 		rom_unrom_path.unlink(missing_ok=True)
 
@@ -87,4 +89,7 @@ def build_roms(mod):
 			200 if result.returncode == 0 else 400
 		)
 	finally:
-		running = False
+		with processing_lock:
+			if not running:
+				logging.error("processing flag changed while it was owned")
+			running = False
