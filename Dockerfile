@@ -24,10 +24,13 @@ RUN PYTHONPATH=$PYTHONPATH:/root/super-tilt-bro/tools /root/stb-tools/json_to_di
 RUN rm -rf /root/stb-tools/
 
 # Install Webservice
-RUN apk add python3 py3-pip py3-flask
+RUN apk add python3 py3-pip py3-flask py3-gunicorn
 COPY stb-mod-builder-service.py /root/
 
 WORKDIR /root
-ENV FLASK_APP=stb-mod-builder-service
 EXPOSE 8000
-CMD ["flask", "run", "--host", "0.0.0.0", "--port", "8000"]
+
+# Note "--workers=1 --threads=2",
+#  this is important as the docker does not support parallel builds and service's code is not multiprocess-safe
+#  the service is thread-safe though so a second thread is good to reject rapidly concurent builds
+CMD ["gunicorn", "--workers=1", "--threads=2", "--bind=0.0.0.0:8000", "stb-mod-builder-service:app"]
